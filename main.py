@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
 app = Flask(__name__)
 
@@ -9,16 +9,10 @@ def get_transcript():
     if not video_id:
         return jsonify({"error": "No video_id"}), 400
     try:
-        transcript = YouTubeTranscriptApi.list_transcripts(video_id)
-        # Ищем нужный язык
-        try:
-            ru_transcript = transcript.find_transcript(['ru', 'en']).fetch()
-        except Exception:
-            # Если нет RU/EN — пробуем авто
-            ru_transcript = transcript.find_manually_created_transcript(['en','ru']).fetch()
-        aggregated = " ".join([item["text"] for item in ru_transcript])
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ru', 'en'])
+        aggregated = " ".join([item["text"] for item in transcript])
         return jsonify({"transcript": aggregated})
-    except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript):
+    except (TranscriptsDisabled, NoTranscriptFound):
         return jsonify({"error": "Transcript not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
